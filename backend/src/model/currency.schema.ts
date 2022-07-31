@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
+export type CurrencyDocument = Currency & Document;
+
 @Schema({_id: false})
 export class Currency {
 
