@@ -2,49 +2,71 @@ import { Injectable, HttpException, HttpStatus } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { Account, AccountDocument } from "../model/account.schema";
-import { Currency, CurrencyDocument } from "../model/currency.schema";
-import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-
+import { Currency } from "../model/currency.schema";
+import { ConfigService } from '@nestjs/config';
+import { CurrencyService } from "../service/currency.service";
+import { HttpService } from 'nestjs-http-promise'
+import { getMonthDifference } from '../utils/base'
 @Injectable()
 export class AccountService {
 
     constructor(
         @InjectModel(Account.name) private accountModel: Model<AccountDocument>,
-        @InjectModel(Currency.name) private currencyModel: Model<CurrencyDocument>,
+        private readonly config: ConfigService,
+        private readonly http: HttpService,
+        
+        private readonly currencyService: CurrencyService
     ) { }
 
-    async signin(account: Account, jwt: JwtService): Promise<any> {
-        const foundAccount = await this.accountModel.findOne({ number: account.number }).populate("currency").exec();
-        if (foundAccount) {
-            return {
-                id    : foundAccount._id,
-                number: foundAccount.number,
-                currency: {
-                    key: foundAccount.currency.key,
-                }
-            };
-        }else{
-            const currency = await this.currencyModel.findOne().exec();
-            if(!currency){
-                return new HttpException('the system doesnt setup', HttpStatus.UNAUTHORIZED)
+    async signin(account: Account): Promise<any> {
+        var foundAccount = await this.accountModel.findOne({ number: account.number })
+            .populate("currencies", {'price':1,'key':1,'ethers':1}, Currency.name).exec();
+            
+        if (!foundAccount) {
+            if(!account.number){
+                return new HttpException('No account to check', HttpStatus.UNAUTHORIZED)
+            }
+            const l   = await this.isOldAccount(account.number);
+            var isOld = false;
+            if(Number(l['data']['status']) == 1){
+                var firstTx = new Date(l['data']['result'][0]['timeStamp'] * 1000);
+                var now     = new Date()
+                isOld       = (getMonthDifference(firstTx, now) < 12)
             }
             const reqBody = {
                 number: account.number,
-                currency: currency
+                isOld : isOld
             }
-            const newAccount = new this.accountModel(reqBody);
-            return {
-                id    : newAccount._id,
-                number: newAccount.number,
-                currency: {
-                    key: currency.key,
-                }
-            };
+            const newAccount =  new this.accountModel(reqBody);
+            await newAccount.save();
+            var currencies = [];
+            for (var currency of this.config.get('currencies')) {
+                currency.account  = newAccount;
+                const newCurrency = await this.currencyService.create(currency);
+                currencies.push(newCurrency);
+            }
+            newAccount.currencies = currencies;
+            await newAccount.save();
+            foundAccount =  await this.getOne(newAccount._id);
         }
+        return {
+            _id       : foundAccount._id,
+            number    : foundAccount.number,
+            isOld     : foundAccount.isOld,
+            currencies: foundAccount.currencies
+        };
     }
+    async getOne(_id: string): Promise<any> {
+        const foundAccount = await this.accountModel.findOne({ _id: _id }).populate("currencies", {'price':1,'key':1,'ethers':1}, Currency.name).exec();
+        if (foundAccount) {
+            return foundAccount
+        }else{
+            return new HttpException('No account to check', HttpStatus.UNAUTHORIZED);
+        }
+    }    
+    async isOldAccount(account): Promise<object> {
+        let uri = `${this.config.get('ether_url')}${account}`
+        return this.http.get(uri);
 
-    async getOne(number): Promise<Account> {
-        return await this.accountModel.findOne({ number }).populate("currency").exec();
     }
 }
