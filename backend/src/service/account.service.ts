@@ -7,6 +7,8 @@ import { ConfigService } from '@nestjs/config';
 import { CurrencyService } from "../service/currency.service";
 import { HttpService } from 'nestjs-http-promise'
 import { getMonthDifference } from '../utils/base'
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AccountService {
 
@@ -18,7 +20,7 @@ export class AccountService {
         private readonly currencyService: CurrencyService
     ) { }
 
-    async signin(account: Account): Promise<any> {
+    async signin(account: Account, jwt: JwtService): Promise<any> {
         var foundAccount = await this.accountModel.findOne({ number: account.number })
             .populate("currencies", {'price':1,'key':1,'ethers':1}, Currency.name).exec();
             
@@ -49,11 +51,14 @@ export class AccountService {
             await newAccount.save();
             foundAccount =  await this.getOne(newAccount._id);
         }
-        return {
+        const payload = {
             _id       : foundAccount._id,
             number    : foundAccount.number,
             isOld     : foundAccount.isOld,
             currencies: foundAccount.currencies
+        };
+        return {
+            token: jwt.sign(payload),
         };
     }
     async getOne(_id: string): Promise<any> {

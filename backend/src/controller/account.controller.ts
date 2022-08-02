@@ -1,11 +1,13 @@
 import { Body, Controller, Delete, Get, HttpStatus, Param, Post, UploadedFiles, Put, Req, Res } from "@nestjs/common";
 import { Account } from "../model/account.schema";
 import { AccountService } from "../service/account.service";
+import { JwtService } from '@nestjs/jwt';
 
 
 @Controller('/api/v1/account')
 export class AccountController {
-    constructor(private readonly accountService: AccountService
+    constructor(private readonly accountService: AccountService,
+        private jwtService: JwtService
     ) { }
 
     @Get('/me')
@@ -20,7 +22,7 @@ export class AccountController {
 
     @Post('/signin')
     async SignIn(@Res() response, @Body() account: Account) {
-        const data = await this.accountService.signin(account);
+        const data = await this.accountService.signin(account, this.jwtService);
         return response.status(HttpStatus.OK).json(data)
     }
 }

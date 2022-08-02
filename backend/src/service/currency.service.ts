@@ -18,6 +18,9 @@ export class CurrencyService {
     }
 
     async update(id, currency: Currency): Promise<Currency> {
-        return await this.currencyModel.findByIdAndUpdate(id, currency, { new: true })
+        const toUpdate = {
+            ethers:currency.ethers
+        }
+        return await this.currencyModel.findByIdAndUpdate(id, toUpdate, { new: true })
     }
 }
