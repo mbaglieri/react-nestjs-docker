@@ -48,9 +48,6 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(isAuthenticated)
-      .exclude(
-        { path: 'api/v1/currency', method: RequestMethod.GET }
-      )
       .forRoutes(CurrencyController);
     consumer
       .apply(isAuthenticated)

@@ -11,7 +11,6 @@ export class isAuthenticated implements NestMiddleware {
     constructor(private readonly accountService: AccountService, private readonly jwt: JwtService ) { }
     async use(req: AccountRequest, res: Response, next: NextFunction) {
         try{
-       
             if ( 
                 req.headers.authorization &&
                 req.headers.authorization.startsWith('Bearer')
@@ -31,7 +30,8 @@ export class isAuthenticated implements NestMiddleware {
                 
             }
         }catch {
-         throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
+            throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
+         
        }
     }
 }
