@@ -16,18 +16,17 @@ FROM node:16-alpine as production
 ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
-WORKDIR /usr/src/api
+WORKDIR /usr/src/app
 
-COPY . .
 COPY package.json .
 COPY yarn.lock .
-COPY .env.prod .env
 
 RUN yarn global add @nestjs/cli
 RUN yarn install --production=true
 
 
+COPY . .
 
 RUN yarn build 
 
-CMD ["sh", "-c", "yarn start:prod"]
+CMD ["node", "server.js"]

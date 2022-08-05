@@ -8,8 +8,10 @@
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",
+    "build-dev": "cp .env.local .env && nest build",
+
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "yarn build-dev && nest start",
     "start:dev": "nest start --debug --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "cross-env NODE_ENV=production node dist/main",

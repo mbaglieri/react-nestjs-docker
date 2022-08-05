@@ -35,10 +35,7 @@ import { secret } from './utils/constants';
    }),
     MongooseModule.forRoot(process.env.DATABASE),
     MongooseModule.forFeature([{ name: Account.name, schema: AccountSchema }]),
-    MongooseModule.forFeature([{ name: Currency.name, schema: CurrencySchema }]),
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'public'),
-    }),
+    MongooseModule.forFeature([{ name: Currency.name, schema: CurrencySchema }])
  ],
 
 controllers: [AppController, CurrencyController, AccountController],
