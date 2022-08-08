@@ -17,16 +17,16 @@ ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /usr/src/app
-
+RUN apk add --update git
 COPY package.json .
 COPY yarn.lock .
-
-RUN yarn global add @nestjs/cli
-RUN yarn install --production=true
-
-
+COPY .env.local .env
+COPY .next .next
 COPY . .
 
-RUN yarn build 
+RUN yarn global add @nestjs/cli
+RUN yarn install --frozen-lockfile
 
-CMD ["node", "server.js"]
+RUN yarn build 
+EXPOSE 3000
+CMD ["yarn", "start:prod"]

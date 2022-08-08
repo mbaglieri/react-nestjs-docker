@@ -8,7 +8,8 @@ const PORT = 3000;
 app.use(express.static(path.join(__dirname, "build")));
 
 app.get("/", function (req, res) {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+  console.log("here")
+  res.sendFile(path.join(__dirname, ".next/server/pages", "index.html"));
 });
 
 app.listen(PORT);
