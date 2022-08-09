@@ -12,7 +12,7 @@ const StyledIdenticon = styled.div`
 
 export default function Identicon() {
   const ref = useRef<HTMLDivElement>();
-  const { globalState, dispatch } = useContext(globalContext)
+  const { globalState } = useContext(globalContext)
   const { account } = globalState
 
   useEffect(() => {

@@ -1,24 +1,26 @@
 import { Text, Grid, GridItem } from "@chakra-ui/react"
 import { useState, useContext, useEffect } from "react"
 import { globalContext } from '../store'
-import { AbiItem } from 'web3-utils'
 import { useButton, useInput } from '../hooks/ui'
+import React from 'react'
+import Select from 'react-select'
 import axios from 'axios';
 import configuration from '../config/configuration';
 // REF: https://dev.to/jacobedawson/send-react-web3-dapp-transactions-via-metamask-2b8n
 export default function Currency() {
   const { globalState, dispatch } = useContext(globalContext)
-  const { account, web3, token, profile } = globalState
-  const [currencyText, setcurrencyText] = useState("")
-  const [currencyOutput, setcurrencyOutput] = useState("")
+  const { account, token, profile, isEditCurrency } = globalState
+  const [currencyText, setCurrencyText] = useState("")
+  const [currencyOutput, setCurrencyOutput] = useState("")
+  const [currencyEtherOutput, setCurrencyEtherOutput] = useState("")
+  const [currencySelected, setCurrencySelected] = useState("")
   const [currencyButtonLoading, currencyButton] = useButton(setNewCurrencyValue, 'save')
-  const [greeting, currencyInput] = useInput(currencyButtonLoading as boolean)
   const [currency1ButtonLoading, currency1Button] = useButton(cancelNewValue, 'cancel')
-  const [greet, currency1Input] = useInput(currency1ButtonLoading as boolean)
+  const [ethersInput, setEthersInput] = useInput(currencyButtonLoading as boolean)
+  const [amountInput, setAmountInput] = useInput(currency1ButtonLoading as boolean)
+  const [amount, setAmount] = useState("")
+  const [ether, setEther] = useState("")
   const [editButtonLoading, editButton] = useButton(editNewValue, 'edit')
-  const [edit, editInput] = useInput(editButtonLoading as boolean)
-  const contractAddress = process.env.REACT_APP_API_URL
-  const isEditAction = false
   let comp : any;
   
   function login() {
@@ -26,11 +28,6 @@ export default function Currency() {
     axios
     .post(configuration().api_url + configuration().api_login, data)
     .then((response) => {
-        // localStorage.setItem('token', response.data.token);
-        // localStorage.setItem('auth', 'true');
-        console.log(contractAddress)
-        console.log(contractAddress)
-        console.log(contractAddress)
         dispatch({ type: 'SET_TOKEN', payload: response.data.token })
         loadProfile(response.data.token)
     })
@@ -46,9 +43,28 @@ export default function Currency() {
       console.log(response.data)
       if (response.data && response.data.isOld) {
         console.log(response.data.isOld)
-        setcurrencyText("This account its old")
+        setCurrencyText("This account its old")
       } 
-      dispatch({ type: 'SET_PROFILE', payload: response.data })
+      let currenciesCombo = [],currency:any;
+      for (let index = 0; index < response.data.currencies.length; index++) {
+        const curr = response.data.currencies[index];
+        let currencyCombo = {
+          value: response.data.currencies[index]._id,
+          label: response.data.currencies[index].key
+        }
+        if(index == 0){
+          currency =  response.data.currencies[index]
+          setCurrencyOutput(response.data.currencies[index].price +  " " +  response.data.currencies[index].key)
+          setCurrencyEtherOutput(response.data.currencies[index].ethers)
+          setCurrencySelected(response.data.currencies[index]._id);
+        }
+        currenciesCombo.push(currencyCombo)
+      }
+      let data             = response.data
+      data.currency        = currency
+      data.currenciesCombo = currenciesCombo
+
+      dispatch({ type: 'SET_PROFILE', payload: data })
     })
     .catch((error) => {
       console.log(error);
@@ -56,15 +72,47 @@ export default function Currency() {
   }
 
   async function cancelNewValue() {
-    console.log('cancelNewValue')
+    dispatch({ type: 'SET_EDIT_CURRENCY', payload: false })
   }
   async function setNewCurrencyValue() {
-    console.log('setNewCurrencyValue')
+    console.log(ether)
+    if(Number(ether)<=0){
+      alert("the min val is 0")
+      return;
+    }
+    let url = configuration().api_url + configuration().api_currency + profile.currency._id
+    console.log('token')
+    axios
+    .put(url,{ethers: ether}, { headers: {"Authorization" : `Bearer ${token}`} })
+    .then((response) => {
+      profile.currency.ethers = ether
+      setCurrencyEtherOutput(ether)
+      dispatch({ type: 'SET_EDIT_CURRENCY', payload: false })
+    })
+    .catch((error) => {
+      console.log(error);
+    });
   }
   async function editNewValue() {
-    console.log('editNewValue')
+    setAmount(profile.currency.price +  " " + profile.currency.key ) 
+    setEther(profile.currency.ethers)
+    dispatch({ type: 'SET_EDIT_CURRENCY', payload: true })
   }
-  
+  const handleChange = (selectedOption: any) => {
+
+    let currency:any;
+    for (let index = 0; index < profile.currencies.length; index++) {
+      let comboValue = profile.currencies[index]._id
+      if(comboValue == selectedOption.value){
+        console.log(selectedOption)
+        profile.currency = profile.currencies[index]
+        setCurrencyOutput(profile.currencies[index].price +  " " +  profile.currencies[index].key)
+        setCurrencyEtherOutput(profile.currencies[index].ethers)
+        setCurrencySelected(comboValue);
+        dispatch({ type: 'SET_PROFILE', payload: profile })
+      }
+    }
+  };
   useEffect(() => {
     if(account && !token){
       login()
@@ -74,32 +122,27 @@ export default function Currency() {
     <div>
       
       { 
-        account && profile && isEditAction && (
+        account && profile && isEditCurrency && (
         <Grid mt="5" templateColumns="repeat(2, 1fr)" templateRows="repeat(4, 1fr)" gap={3}>
-          <GridItem><Text textAlign="right" fontWeight="bold">Edit Currency</Text></GridItem>
-          <GridItem><Text>{currencyText}</Text></GridItem>
+          <GridItem colSpan={2} alignItems="center"><Text>{currencyText}</Text></GridItem>
+          <GridItem colSpan={2} alignItems="center"><Text textAlign="center" fontWeight="bold" >Edit Currency</Text></GridItem>
+
+          <GridItem><input type="number" placeholder="Ethers" onChange={e => setEther(e.target.value)} value={ether} min="0"/></GridItem>
+          <GridItem >{amount}</GridItem>
           <GridItem alignItems="end">{currencyButton}</GridItem>
-          <GridItem>{currencyInput}</GridItem>
           <GridItem alignItems="end">{currency1Button}</GridItem>
-          <GridItem>{currency1Input}</GridItem>
-          <GridItem colSpan={2}>
-            <Text fontWeight="bold" textAlign="center">{currencyOutput}</Text>
-          </GridItem>
         </Grid>
         ) ||
-        account && profile && !isEditAction && (
+        account && profile && !isEditCurrency && (
+
         <Grid mt="5" templateColumns="repeat(2, 1fr)" templateRows="repeat(4, 1fr)" gap={3}>
           <GridItem colSpan={2} alignItems="end"><Text>{currencyText}</Text></GridItem>
-          <GridItem colSpan={2} alignItems="end"><Text textAlign="right" fontWeight="bold" >List Currency</Text></GridItem>
+          <GridItem colSpan={2} alignItems="end"><Text textAlign="center" fontWeight="bold" >List Currency</Text></GridItem>
 
-          <GridItem alignItems="end" >{editButton}</GridItem>
-          <GridItem>{editInput}</GridItem>
-
-          <GridItem alignItems="end" colSpan={2}></GridItem>
-          <GridItem colSpan={2}>{currency1Input}</GridItem>
-          <GridItem colSpan={2}>
-            <Text fontWeight="bold" textAlign="center">{currencyOutput}</Text>
-          </GridItem>
+          <GridItem>{currencyEtherOutput}</GridItem>
+          <GridItem >{currencyOutput}</GridItem>
+          <GridItem >{editButton}</GridItem>
+          <GridItem ><Select options={profile.currenciesCombo} onChange={handleChange} value={currencySelected}/></GridItem>
         </Grid>
         ) 
 
