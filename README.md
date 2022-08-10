@@ -145,14 +145,17 @@ You can start api with followed command.
 And if you modify code and save, you can see the process detect code changes and restart it self.
 
 For the front end we do
+
 ```bash
-    cd backend
+    cd front-end
+    yarn install
     yarn dev
 ```
 ## Start with docker
 If you can use docker cli, you can build docker image.
 
 ```bash
+  cd backend
   docker build -t react-nestjs-docker
   docker images # list up docker images
 ```
