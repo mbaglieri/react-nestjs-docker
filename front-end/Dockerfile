@@ -20,7 +20,7 @@ WORKDIR /usr/src/app
 RUN apk add --update git
 COPY package.json .
 COPY yarn.lock .
-COPY .env.local .env
+COPY .env.prod .env
 COPY .next .next
 COPY . .
 

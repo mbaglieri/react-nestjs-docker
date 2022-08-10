@@ -81,7 +81,7 @@ export default function Currency() {
       return;
     }
     let url = configuration().api_url + configuration().api_currency + profile.currency._id
-    console.log('token')
+    console.log(url)
     axios
     .put(url,{ethers: ether}, { headers: {"Authorization" : `Bearer ${token}`} })
     .then((response) => {
@@ -104,7 +104,6 @@ export default function Currency() {
     for (let index = 0; index < profile.currencies.length; index++) {
       let comboValue = profile.currencies[index]._id
       if(comboValue == selectedOption.value){
-        console.log(selectedOption)
         profile.currency = profile.currencies[index]
         setCurrencyOutput(profile.currencies[index].price +  " " +  profile.currencies[index].key)
         setCurrencyEtherOutput(profile.currencies[index].ethers)

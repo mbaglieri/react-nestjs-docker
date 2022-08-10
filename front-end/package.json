@@ -40,7 +40,7 @@
   "scripts": {
     "dev": "npm run build-dev && next dev",
     "build-dev": "cp .env.local .env && next build",
-    "build": "cp .env.local .env && next build",
+    "build": "cp .env.prod .env && next build",
     "start": "next start",
     "start:prod": "node ./server.js"
   },
